@@ -23,7 +23,8 @@ class APIClient:
 
         self.session = requests.Session()
         self.session.headers = {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept": "application/json"
         }
 
     def get_base_url(self, environment: Environment) -> str:
@@ -94,10 +95,6 @@ class APIClient:
         with allure.step('Creating booking'):
             url = f"{self.base_url}{Endpoints.BOOKING_ENDPOINT.value}"
             response = self.session.post(url, json=booking_data)
-
-            # print("STATUS:", response.status_code)
-            # print("RESPONSE:", response.text)
-
             response.raise_for_status()
         with allure.step('Checking status code'):
             assert response.status_code == 200, f"Expected status code 200 but got {response.status_code}"

@@ -8,17 +8,22 @@ import requests
 @allure.story('Create booking')
 def test_create_booking(api_client, generate_random_booking_data):
     booking = api_client.create_booking(generate_random_booking_data)
-
     assert booking["bookingid"] > 0
 
 
-# При прямом requests.post() на POST /booking получаю 200.
-# Через мой APIClient.create_booking() получаю 418.
-# Перед этим fixture вызывает client.auth(), после чего я добавляю Bearer token в session.headers.
+@allure.feature('Booking')
+@allure.story('Server unavailable')
+def test_create_booking_server_unavailable(api_client, generate_random_booking_data, mocker):
+    mocker.patch.object(api_client.session, 'post', side_effect=Exception("Server unavailable"))
+    with pytest.raises(Exception, match="Server unavailable"):
+        api_client.create_booking(generate_random_booking_data)
 
 
-
-# Проверка полноты json
-# статус код 200, после создания бронирования
-
-# мокирование с помощью мокера
+@allure.feature('Booking')
+@allure.story('Incorrect Status-code')
+def test_create_booking_incorrect_status_code(api_client, generate_random_booking_data, mocker):
+    mock_response = mocker.Mock()
+    mock_response.status_code = 201
+    mocker.patch.object(api_client.session, 'post', return_value=mock_response)
+    with pytest.raises(Exception, match="Expected status code 200 but got 201"):
+        api_client.create_booking(generate_random_booking_data)
