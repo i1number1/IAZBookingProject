@@ -1,27 +1,46 @@
 import allure
 import pytest
 import requests
+from core.clients.endpoints import Endpoints
 
-# Тесты на создание бронирования
 
+# Проверка создания бронирования и тела ответа
 @allure.feature('Booking')
 @allure.story('Create booking')
 def test_create_booking(api_client, generate_random_booking_data):
     booking = api_client.create_booking(generate_random_booking_data)
     assert booking["bookingid"] > 0
+    assert booking["booking"]["firstname"] == generate_random_booking_data["firstname"]
+    assert booking["booking"]["lastname"] == generate_random_booking_data["lastname"]
+    assert booking["booking"]["totalprice"] == generate_random_booking_data["totalprice"]
+    assert booking["booking"]["depositpaid"] == generate_random_booking_data["depositpaid"]
+    assert booking["booking"]["bookingdates"] == generate_random_booking_data["bookingdates"]
+    assert booking["booking"]["additionalneeds"] == generate_random_booking_data["additionalneeds"]
 
 
+# Отправка пустого тела запроса
 @allure.feature('Booking')
-@allure.story('Server unavailable')
-def test_create_booking_server_unavailable(api_client, generate_random_booking_data, mocker):
-    mocker.patch.object(api_client.session, 'post', side_effect=Exception("Server unavailable"))
-    with pytest.raises(Exception, match="Server unavailable"):
-        api_client.create_booking(generate_random_booking_data)
+@allure.story('Create booking with empty body')
+def test_create_booking_empty_body(api_client):
+    booking_data = {}
+    response = api_client.session.post(f"{api_client.base_url}{Endpoints.BOOKING_ENDPOINT.value}",json=booking_data)
+    assert response.status_code == 500
 
 
+# Отправка запроса без обязательного поля "firstname"
 @allure.feature('Booking')
-@allure.story('Incorrect Status-code')
-def test_create_booking_incorrect_status_code(api_client, generate_random_booking_data, mocker):
+@allure.story('Create booking without firstname')
+def test_create_booking_without_firstname(api_client, generate_random_booking_data):
+    booking_data = generate_random_booking_data.copy()
+    booking_data.pop("firstname")
+    response = api_client.session.post(f"{api_client.base_url}{Endpoints.BOOKING_ENDPOINT.value}", json=booking_data)
+    assert response.status_code == 500
+
+
+# Проверка обработки неправильного status code
+@allure.feature('Booking')
+@allure.story('Unexpected status code')
+def test_create_booking_unexpected_status_code(api_client, generate_random_booking_data, mocker):
     mock_response = mocker.Mock()
     mock_response.status_code = 201
     mocker.patch.object(api_client.session, 'post', return_value=mock_response)
