@@ -23,8 +23,8 @@ def test_create_booking(api_client, generate_random_booking_data):
 @allure.story('Create booking with empty body')
 def test_create_booking_empty_body(api_client):
     booking_data = {}
-    response = api_client.session.post(f"{api_client.base_url}{Endpoints.BOOKING_ENDPOINT.value}",json=booking_data)
-    assert response.status_code == 500
+    with pytest.raises(requests.HTTPError):
+        api_client.create_booking(booking_data)
 
 
 # Отправка запроса без обязательного поля "firstname"
@@ -33,8 +33,8 @@ def test_create_booking_empty_body(api_client):
 def test_create_booking_without_firstname(api_client, generate_random_booking_data):
     booking_data = generate_random_booking_data.copy()
     booking_data.pop("firstname")
-    response = api_client.session.post(f"{api_client.base_url}{Endpoints.BOOKING_ENDPOINT.value}", json=booking_data)
-    assert response.status_code == 500
+    with pytest.raises(requests.HTTPError):
+        api_client.create_booking(booking_data)
 
 
 # Проверка обработки неправильного status code
